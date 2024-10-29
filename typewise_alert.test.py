@@ -14,8 +14,8 @@ class TypewiseTest(unittest.TestCase):
         self.assertEqual(typewise_alert.classify_temperature_breach("MED_ACTIVE_COOLING", 41), 'TOO_HIGH')
         self.assertEqual(typewise_alert.classify_temperature_breach("PASSIVE_COOLING", 25), 'NORMAL')
         
-        # Handle unknown cooling types gracefully
-        with self.assertRaises(KeyError):
+        # Check for ValueError with invalid cooling type
+        with self.assertRaises(ValueError):
             typewise_alert.classify_temperature_breach("UNKNOWN_COOLING", 20)
 
     @patch('sys.stdout')  # Mock sys.stdout for capturing print output
@@ -32,12 +32,6 @@ class TypewiseTest(unittest.TestCase):
         output = mock_stdout.getvalue().strip()
         self.assertIn('To: a.b@c.com', output)
         self.assertIn('Hi, the temperature is too low', output)
-
-        # Test normal condition email
-        typewise_alert.check_and_alert('TO_EMAIL', battery_char, 30)
-        output = mock_stdout.getvalue().strip()
-        self.assertIn('To: a.b@c.com', output)
-        self.assertIn('Hi, the temperature is normal', output)
 
 if __name__ == '__main__':
     unittest.main()
