@@ -18,20 +18,18 @@ class TypewiseTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             typewise_alert.classify_temperature_breach("UNKNOWN_COOLING", 20)
 
-    @patch('sys.stdout')  # Mock sys.stdout for capturing print output
-    def test_check_and_alert(self, mock_stdout):
-        battery_char = {'coolingType': 'PASSIVE_COOLING'}
-        
-        # Test controller alert for TOO_HIGH breach
-        typewise_alert.check_and_alert('TO_CONTROLLER', battery_char, 40)
-        output = mock_stdout.getvalue().strip()
-        self.assertIn('65261, TOO_HIGH', output)
+@patch('builtins.print')
+def test_check_and_alert(self, mock_print):
+    battery_char = {'coolingType': 'PASSIVE_COOLING'}
+    
+    # Test controller alert for TOO_HIGH breach
+    typewise_alert.check_and_alert('TO_CONTROLLER', battery_char, 40)
+    mock_print.assert_any_call('65261, TOO_HIGH')
 
-        # Test email alert for TOO_LOW breach
-        typewise_alert.check_and_alert('TO_EMAIL', battery_char, 5)
-        output = mock_stdout.getvalue().strip()
-        self.assertIn('To: a.b@c.com', output)
-        self.assertIn('Hi, the temperature is too low', output)
+    # Test email alert for TOO_LOW breach
+    typewise_alert.check_and_alert('TO_EMAIL', battery_char, 5)
+    mock_print.assert_any_call('To: a.b@c.com')
+    mock_print.assert_any_call('Hi, the temperature is too low')
 
 if __name__ == '__main__':
     unittest.main()
