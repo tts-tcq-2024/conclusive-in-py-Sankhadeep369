@@ -1,49 +1,41 @@
-# Refactored typewise_alert.py
-COOLING_LIMITS = {
+# Constants for limits based on cooling type
+cooling_limits = {
     'PASSIVE_COOLING': (0, 35),
     'HI_ACTIVE_COOLING': (0, 45),
     'MED_ACTIVE_COOLING': (0, 40)
 }
 
-ALERT_TARGETS = {
-    'TO_CONTROLLER': 'send_to_controller',
-    'TO_EMAIL': 'send_to_email'
-}
-
-def infer_breach(value, lower_limit, upper_limit):
-    if value < lower_limit:
+def infer_breach(value, lowerLimit, upperLimit):
+    if value < lowerLimit:
         return 'TOO_LOW'
-    if value > upper_limit:
+    if value > upperLimit:
         return 'TOO_HIGH'
     return 'NORMAL'
 
+def classify_temperature_breach(coolingType, temperatureInC):
+    limits = cooling_limits.get(coolingType, (0, 0))  # default is 0,0 for unknown types
+    return infer_breach(temperatureInC, limits[0], limits[1])
 
-def classify_temperature_breach(cooling_type, temperature):
-    if cooling_type not in COOLING_LIMITS:
-        raise ValueError(f"Unknown cooling type: {cooling_type}")
-    lower_limit, upper_limit = COOLING_LIMITS[cooling_type]
-    return infer_breach(temperature, lower_limit, upper_limit)
+# Strategy pattern for alerting mechanism
+def check_and_alert(alertTarget, batteryChar, temperatureInC):
+    breachType = classify_temperature_breach(batteryChar['coolingType'], temperatureInC)
+    alert_handlers = {
+        'TO_CONTROLLER': send_to_controller,
+        'TO_EMAIL': send_to_email
+    }
+    # Dispatch to the appropriate alert handler
+    alert_handlers.get(alertTarget, lambda x: None)(breachType)
 
-
-def check_and_alert(alert_target, battery_char, temperature):
-    breach_type = classify_temperature_breach(battery_char['coolingType'], temperature)
-    if alert_target in ALERT_TARGETS:
-        globals()[ALERT_TARGETS[alert_target]](breach_type)
-    else:
-        raise ValueError(f"Unknown alert target: {alert_target}")
-
-
-def send_to_controller(breach_type):
+def send_to_controller(breachType):
     header = 0xfeed
-    print(f'{header}, {breach_type}')
+    print(f'{header}, {breachType}')
 
-
-def send_to_email(breach_type):
+def send_to_email(breachType):
     recepient = "a.b@c.com"
-    if breach_type == 'TOO_LOW':
-        print(f'To: {recepient}\nHi, the temperature is too low')
-    elif breach_type == 'TOO_HIGH':
-        print(f'To: {recepient}\nHi, the temperature is too high')
-
-
-# Reflect the refactored and cleaner code handling more cases with less complexity
+    message = {
+        'TOO_LOW': 'Hi, the temperature is too low',
+        'TOO_HIGH': 'Hi, the temperature is too high',
+    }
+    if breachType in message:
+        print(f'To: {recepient}')
+        print(message[breachType])
